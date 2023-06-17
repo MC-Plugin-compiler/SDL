@@ -19,7 +19,8 @@ jobs:
       fail-fast: false
       matrix:
         platform: 
-        - { name: Ubuntu 20.04,                   os: ubuntu-20.04,   shell: bash, artifact: 'SDL-ubuntu20.04', cmake: '-DCMAKE_C_FLAGS=-m32 -DCMAKE_CXX_FLAGS=-m32'}
+        - { name: Ubuntu 20.04-32bit,                   os: ubuntu-20.04,   shell: bash, artifact: 'SDL-ubuntu20.04-32bit', cmake: '-DCMAKE_C_FLAGS=-m32 -DCMAKE_CXX_FLAGS=-m32 -DSDL_IBUS=FALSE'}
+        - { name: Ubuntu 20.04-64bit,                   os: ubuntu-20.04,   shell: bash, artifact: 'SDL-ubuntu20.04-64bit'}
 
     steps:
 
@@ -51,7 +52,6 @@ jobs:
           -DSDL_SHARED=ON \
           -DSDL_STATIC=ON \
           -DSDL_TESTS=ON \
-          -DSDL_IBUS=FALSE \
           -DSDL_WERROR=ON \
           -DSDL_INSTALL_TESTS=ON \
           -DSDL_VENDOR_INFO="Github Workflow" \
