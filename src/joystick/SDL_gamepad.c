@@ -370,22 +370,20 @@ static void RecenterGamepad(SDL_Gamepad *gamepad)
     }
 }
 
-/* SDL defines sensor orientation for phones relative to the natural
-   orientation, and for gamepads relative to being held in front of you.
-   When a phone is being used as a gamepad, its orientation changes,
-   so adjust sensor axes to match.
+/* SDL defines sensor orientation relative to the device natural
+   orientation, so when it's changed orientation to be used as a
+   gamepad, change the sensor orientation to match.
  */
-static void AdjustSensorOrientation(float *src, float *dst)
+static void AdjustSensorOrientation(SDL_Joystick *joystick, float *src, float *dst)
 {
-    /* When a phone is rotated left and laid flat, the axes change
-       orientation as follows:
-        -X to +X becomes +Z to -Z
-        -Y to +Y becomes +X to -X
-        -Z to +Z becomes -Y to +Y
-    */
-    dst[0] = -src[1];
-    dst[1] = src[2];
-    dst[2] = -src[0];
+    unsigned int i, j;
+
+    for (i = 0; i < 3; ++i) {
+        dst[i] = 0.0f;
+        for (j = 0; j < 3; ++j) {
+            dst[i] += joystick->sensor_transform[i][j] * src[j];
+        }
+    }
 }
 
 /*
@@ -468,12 +466,12 @@ static int SDLCALL SDL_GamepadEventWatcher(void *userdata, SDL_Event *event)
         for (gamepad = SDL_gamepads; gamepad; gamepad = gamepad->next) {
             if (gamepad->joystick->accel && gamepad->joystick->accel_sensor == event->sensor.which) {
                 float data[3];
-                AdjustSensorOrientation(event->sensor.data, data);
+                AdjustSensorOrientation(gamepad->joystick, event->sensor.data, data);
                 SDL_SendJoystickSensor(event->common.timestamp, gamepad->joystick, SDL_SENSOR_ACCEL, event->sensor.sensor_timestamp, data, SDL_arraysize(data));
             }
             if (gamepad->joystick->gyro && gamepad->joystick->gyro_sensor == event->sensor.which) {
                 float data[3];
-                AdjustSensorOrientation(event->sensor.data, data);
+                AdjustSensorOrientation(gamepad->joystick, event->sensor.data, data);
                 SDL_SendJoystickSensor(event->common.timestamp, gamepad->joystick, SDL_SENSOR_GYRO, event->sensor.sensor_timestamp, data, SDL_arraysize(data));
             }
         }
