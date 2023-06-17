@@ -49,6 +49,7 @@ jobs:
           -DSDL_SHARED=ON \
           -DSDL_STATIC=ON \
           -DSDL_TESTS=ON \
+          -DSDL_IBUS=FALSE \
           -DSDL_WERROR=ON \
           -DSDL_INSTALL_TESTS=ON \
           -DSDL_VENDOR_INFO="Github Workflow" \
