@@ -361,6 +361,10 @@
 #define KMOD_SCROLL SDL_KMOD_SCROLL
 #define KMOD_SHIFT SDL_KMOD_SHIFT
 
+/* ##SDL_log.h */
+#define SDL_LogGetOutputFunction SDL_GetLogOutputFunction
+#define SDL_LogSetOutputFunction SDL_SetLogOutputFunction
+
 /* ##SDL_mouse.h */
 #define SDL_FreeCursor SDL_DestroyCursor
 
@@ -460,7 +464,7 @@
 #define SDL_RWops SDL_IOStream
 #define SDL_RWread SDL_ReadIO
 #define SDL_RWseek SDL_SeekIO
-#define SDL_RWsize SDL_SizeIO
+#define SDL_RWsize SDL_GetIOSize
 #define SDL_RWtell SDL_TellIO
 #define SDL_RWwrite SDL_WriteIO
 #define SDL_ReadBE16 SDL_ReadU16BE
@@ -858,6 +862,10 @@
 #define KMOD_SCROLL KMOD_SCROLL_renamed_SDL_KMOD_SCROLL
 #define KMOD_SHIFT KMOD_SHIFT_renamed_SDL_KMOD_SHIFT
 
+/* ##SDL_log.h */
+#define SDL_LogGetOutputFunction SDL_LogGetOutputFunction_renamed_SDL_GetLogOutputFunction
+#define SDL_LogSetOutputFunction SDL_LogSetOutputFunction_renamed_SDL_SetLogOutputFunction
+
 /* ##SDL_mouse.h */
 #define SDL_FreeCursor SDL_FreeCursor_renamed_SDL_DestroyCursor
 
@@ -957,7 +965,7 @@
 #define SDL_RWops SDL_RWops_renamed_SDL_IOStream
 #define SDL_RWread SDL_RWread_renamed_SDL_ReadIO
 #define SDL_RWseek SDL_RWseek_renamed_SDL_SeekIO
-#define SDL_RWsize SDL_RWsize_renamed_SDL_SizeIO
+#define SDL_RWsize SDL_RWsize_renamed_SDL_GetIOSize
 #define SDL_RWtell SDL_RWtell_renamed_SDL_TellIO
 #define SDL_RWwrite SDL_RWwrite_renamed_SDL_WriteIO
 #define SDL_ReadBE16 SDL_ReadBE16_renamed_SDL_ReadU16BE

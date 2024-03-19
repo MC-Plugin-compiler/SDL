@@ -169,13 +169,13 @@ typedef struct SDL_IOStream SDL_IOStream;
  *   to a win32 `HANDLE`, that this SDL_IOStream is using to access the
  *   filesystem. If the program isn't running on Windows, or SDL used some
  *   other method to access the filesystem, this property will not be set.
- * - `SDL_PROP_IOSTREAM_STDIO_HANDLE_POINTER`: a pointer, that can be cast to
- *   a stdio `FILE *`, that this SDL_IOStream is using to access the
- *   filesystem. If SDL used some other method to access the filesystem, this
- *   property will not be set. PLEASE NOTE that if SDL is using a different C
- *   runtime than your app, trying to use this pointer will almost certainly
- *   result in a crash! This is mostly a problem on Windows; make sure you
- *   build SDL and your app with the same compiler and settings to avoid it.
+ * - `SDL_PROP_IOSTREAM_STDIO_FILE_POINTER`: a pointer, that can be cast to a
+ *   stdio `FILE *`, that this SDL_IOStream is using to access the filesystem.
+ *   If SDL used some other method to access the filesystem, this property
+ *   will not be set. PLEASE NOTE that if SDL is using a different C runtime
+ *   than your app, trying to use this pointer will almost certainly result in
+ *   a crash! This is mostly a problem on Windows; make sure you build SDL and
+ *   your app with the same compiler and settings to avoid it.
  * - `SDL_PROP_IOSTREAM_ANDROID_AASSET_POINTER`: a pointer, that can be cast
  *   to an Android NDK `AAsset *`, that this SDL_IOStream is using to access
  *   the filesystem. If SDL used some other method to access the filesystem,
@@ -189,8 +189,6 @@ typedef struct SDL_IOStream SDL_IOStream;
  *
  * \since This function is available since SDL 3.0.0.
  *
- * \sa SDL_IOFromConstMem
- * \sa SDL_IOFromMem
  * \sa SDL_CloseIO
  * \sa SDL_ReadIO
  * \sa SDL_SeekIO
@@ -199,9 +197,9 @@ typedef struct SDL_IOStream SDL_IOStream;
  */
 extern DECLSPEC SDL_IOStream *SDLCALL SDL_IOFromFile(const char *file, const char *mode);
 
-#define SDL_PROP_IOSTREAM_WINDOWS_HANDLE_POINTER "SDL.iostream.windows.handle"
-#define SDL_PROP_IOSTREAM_STDIO_HANDLE_POINTER "SDL.iostream.stdio.handle"
-#define SDL_PROP_IOSTREAM_ANDROID_AASSET_POINTER "SDL.opstream.android.aasset"
+#define SDL_PROP_IOSTREAM_WINDOWS_HANDLE_POINTER    "SDL.iostream.windows.handle"
+#define SDL_PROP_IOSTREAM_STDIO_FILE_POINTER        "SDL.iostream.stdio.file"
+#define SDL_PROP_IOSTREAM_ANDROID_AASSET_POINTER    "SDL.iostream.android.aasset"
 
 /**
  * Use this function to prepare a read-write memory buffer for use with
@@ -226,8 +224,6 @@ extern DECLSPEC SDL_IOStream *SDLCALL SDL_IOFromFile(const char *file, const cha
  * \since This function is available since SDL 3.0.0.
  *
  * \sa SDL_IOFromConstMem
- * \sa SDL_IOFromFile
- * \sa SDL_IOFromMem
  * \sa SDL_CloseIO
  * \sa SDL_ReadIO
  * \sa SDL_SeekIO
@@ -260,8 +256,6 @@ extern DECLSPEC SDL_IOStream *SDLCALL SDL_IOFromMem(void *mem, size_t size);
  *
  * \since This function is available since SDL 3.0.0.
  *
- * \sa SDL_IOFromConstMem
- * \sa SDL_IOFromFile
  * \sa SDL_IOFromMem
  * \sa SDL_CloseIO
  * \sa SDL_ReadIO
@@ -269,6 +263,34 @@ extern DECLSPEC SDL_IOStream *SDLCALL SDL_IOFromMem(void *mem, size_t size);
  * \sa SDL_TellIO
  */
 extern DECLSPEC SDL_IOStream *SDLCALL SDL_IOFromConstMem(const void *mem, size_t size);
+
+/**
+ * Use this function to create an SDL_IOStream that is backed by dynamically
+ * allocated memory.
+ *
+ * This supports the following properties to provide access to the memory and
+ * control over allocations: - `SDL_PROP_IOSTREAM_DYNAMIC_MEMORY_POINTER`: a
+ * pointer to the internal memory of the stream. This can be set to NULL to
+ * transfer ownership of the memory to the application, which should free the
+ * memory with SDL_free(). If this is done, the next operation on the stream
+ * must be SDL_CloseIO(). - `SDL_PROP_IOSTREAM_DYNAMIC_CHUNKSIZE_NUMBER`:
+ * memory will be allocated in multiples of this size, defaulting to 1024.
+ *
+ * \returns a pointer to a new SDL_IOStream structure, or NULL if it fails;
+ *          call SDL_GetError() for more information.
+ *
+ * \since This function is available since SDL 3.0.0.
+ *
+ * \sa SDL_CloseIO
+ * \sa SDL_ReadIO
+ * \sa SDL_SeekIO
+ * \sa SDL_TellIO
+ * \sa SDL_WriteIO
+ */
+extern DECLSPEC SDL_IOStream *SDLCALL SDL_IOFromDynamicMem(void);
+
+#define SDL_PROP_IOSTREAM_DYNAMIC_MEMORY_POINTER    "SDL.iostream.dynamic.memory"
+#define SDL_PROP_IOSTREAM_DYNAMIC_CHUNKSIZE_NUMBER  "SDL.iostream.dynamic.chunksize"
 
 /* @} *//* IOFrom functions */
 
@@ -292,6 +314,9 @@ extern DECLSPEC SDL_IOStream *SDLCALL SDL_IOFromConstMem(const void *mem, size_t
  * \since This function is available since SDL 3.0.0.
  *
  * \sa SDL_CloseIO
+ * \sa SDL_IOFromConstMem
+ * \sa SDL_IOFromFile
+ * \sa SDL_IOFromMem
  */
 extern DECLSPEC SDL_IOStream *SDLCALL SDL_OpenIO(const SDL_IOStreamInterface *iface, void *userdata);
 
@@ -312,12 +337,7 @@ extern DECLSPEC SDL_IOStream *SDLCALL SDL_OpenIO(const SDL_IOStreamInterface *if
  *
  * \since This function is available since SDL 3.0.0.
  *
- * \sa SDL_IOFromConstMem
- * \sa SDL_IOFromFile
- * \sa SDL_IOFromMem
- * \sa SDL_ReadIO
- * \sa SDL_SeekIO
- * \sa SDL_WriteIO
+ * \sa SDL_OpenIO
  */
 extern DECLSPEC int SDLCALL SDL_CloseIO(SDL_IOStream *context);
 
@@ -370,7 +390,7 @@ extern DECLSPEC SDL_IOStatus SDLCALL SDL_GetIOStatus(SDL_IOStream *context);
  *
  * \since This function is available since SDL 3.0.0.
  */
-extern DECLSPEC Sint64 SDLCALL SDL_SizeIO(SDL_IOStream *context);
+extern DECLSPEC Sint64 SDLCALL SDL_GetIOSize(SDL_IOStream *context);
 
 /**
  * Seek within an SDL_IOStream data stream.
@@ -395,12 +415,7 @@ extern DECLSPEC Sint64 SDLCALL SDL_SizeIO(SDL_IOStream *context);
  *
  * \since This function is available since SDL 3.0.0.
  *
- * \sa SDL_IOFromConstMem
- * \sa SDL_IOFromFile
- * \sa SDL_IOFromMem
- * \sa SDL_ReadIO
  * \sa SDL_TellIO
- * \sa SDL_WriteIO
  */
 extern DECLSPEC Sint64 SDLCALL SDL_SeekIO(SDL_IOStream *context, Sint64 offset, int whence);
 
@@ -418,12 +433,7 @@ extern DECLSPEC Sint64 SDLCALL SDL_SeekIO(SDL_IOStream *context, Sint64 offset, 
  *
  * \since This function is available since SDL 3.0.0.
  *
- * \sa SDL_IOFromConstMem
- * \sa SDL_IOFromFile
- * \sa SDL_IOFromMem
- * \sa SDL_ReadIO
  * \sa SDL_SeekIO
- * \sa SDL_WriteIO
  */
 extern DECLSPEC Sint64 SDLCALL SDL_TellIO(SDL_IOStream *context);
 
@@ -445,9 +455,6 @@ extern DECLSPEC Sint64 SDLCALL SDL_TellIO(SDL_IOStream *context);
  *
  * \since This function is available since SDL 3.0.0.
  *
- * \sa SDL_IOFromConstMem
- * \sa SDL_IOFromFile
- * \sa SDL_IOFromMem
  * \sa SDL_SeekIO
  * \sa SDL_WriteIO
  */
@@ -479,9 +486,6 @@ extern DECLSPEC size_t SDLCALL SDL_ReadIO(SDL_IOStream *context, void *ptr, size
  *
  * \since This function is available since SDL 3.0.0.
  *
- * \sa SDL_IOFromConstMem
- * \sa SDL_IOFromFile
- * \sa SDL_IOFromMem
  * \sa SDL_IOprintf
  * \sa SDL_ReadIO
  * \sa SDL_SeekIO
@@ -502,11 +506,7 @@ extern DECLSPEC size_t SDLCALL SDL_WriteIO(SDL_IOStream *context, const void *pt
  *
  * \since This function is available since SDL 3.0.0.
  *
- * \sa SDL_IOFromConstMem
- * \sa SDL_IOFromFile
- * \sa SDL_IOFromMem
- * \sa SDL_ReadIO
- * \sa SDL_SeekIO
+ * \sa SDL_IOvprintf
  * \sa SDL_WriteIO
  */
 extern DECLSPEC size_t SDLCALL SDL_IOprintf(SDL_IOStream *context, SDL_PRINTF_FORMAT_STRING const char *fmt, ...)  SDL_PRINTF_VARARG_FUNC(2);
@@ -524,11 +524,7 @@ extern DECLSPEC size_t SDLCALL SDL_IOprintf(SDL_IOStream *context, SDL_PRINTF_FO
  *
  * \since This function is available since SDL 3.0.0.
  *
- * \sa SDL_IOFromConstMem
- * \sa SDL_IOFromFile
- * \sa SDL_IOFromMem
- * \sa SDL_ReadIO
- * \sa SDL_SeekIO
+ * \sa SDL_IOprintf
  * \sa SDL_WriteIO
  */
 extern DECLSPEC size_t SDLCALL SDL_IOvprintf(SDL_IOStream *context, SDL_PRINTF_FORMAT_STRING const char *fmt, va_list ap) SDL_PRINTF_VARARG_FUNCV(2);
@@ -549,6 +545,8 @@ extern DECLSPEC size_t SDLCALL SDL_IOvprintf(SDL_IOStream *context, SDL_PRINTF_F
  * \returns the data, or NULL if there was an error.
  *
  * \since This function is available since SDL 3.0.0.
+ *
+ * \sa SDL_LoadFile
  */
 extern DECLSPEC void *SDLCALL SDL_LoadFile_IO(SDL_IOStream *src, size_t *datasize, SDL_bool closeio);
 
@@ -566,6 +564,8 @@ extern DECLSPEC void *SDLCALL SDL_LoadFile_IO(SDL_IOStream *src, size_t *datasiz
  * \returns the data, or NULL if there was an error.
  *
  * \since This function is available since SDL 3.0.0.
+ *
+ * \sa SDL_LoadFile_IO
  */
 extern DECLSPEC void *SDLCALL SDL_LoadFile(const char *file, size_t *datasize);
 

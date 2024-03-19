@@ -346,9 +346,6 @@ static void ConfigureWindowGeometry(SDL_Window *window)
 
         if (window_size_changed || drawable_size_changed) {
             if (data->viewport) {
-                wp_viewport_set_source(data->viewport,
-                                       wl_fixed_from_int(0), wl_fixed_from_int(0),
-                                       wl_fixed_from_int(data->current.drawable_width), wl_fixed_from_int(data->current.drawable_height));
                 wp_viewport_set_destination(data->viewport, output_width, output_height);
 
                 data->current.logical_width = output_width;
@@ -378,9 +375,6 @@ static void ConfigureWindowGeometry(SDL_Window *window)
 
         if (window_size_changed || drawable_size_changed) {
             if (data->viewport) {
-                wp_viewport_set_source(data->viewport,
-                                       wl_fixed_from_int(0), wl_fixed_from_int(0),
-                                       wl_fixed_from_int(data->current.drawable_width), wl_fixed_from_int(data->current.drawable_height));
                 wp_viewport_set_destination(data->viewport, window_width, window_height);
             } else if (window->flags & SDL_WINDOW_HIGH_PIXEL_DENSITY) {
                 /* Don't change this if the DPI awareness flag is unset, as an application may have set this manually on a custom or external surface. */
@@ -1490,10 +1484,7 @@ static void exported_handle_handler(void *data, struct zxdg_exported_v2 *zxdg_ex
     SDL_WindowData *wind = (SDL_WindowData*)data;
     SDL_PropertiesID props = SDL_GetWindowProperties(wind->sdlwindow);
 
-    SDL_free(wind->export_handle);
-    wind->export_handle = SDL_strdup(handle);
-
-    SDL_SetProperty(props, SDL_PROP_WINDOW_WAYLAND_XDG_TOPLEVEL_EXPORT_HANDLE_POINTER, wind->export_handle);
+    SDL_SetStringProperty(props, SDL_PROP_WINDOW_WAYLAND_XDG_TOPLEVEL_EXPORT_HANDLE_STRING, handle);
 }
 
 static struct zxdg_exported_v2_listener exported_v2_listener = {
@@ -1829,10 +1820,7 @@ void Wayland_HideWindow(SDL_VideoDevice *_this, SDL_Window *window)
         zxdg_exported_v2_destroy(wind->exported);
         wind->exported = NULL;
 
-        SDL_free(wind->export_handle);
-        wind->export_handle = NULL;
-
-        SDL_SetProperty(props, SDL_PROP_WINDOW_WAYLAND_XDG_TOPLEVEL_EXPORT_HANDLE_POINTER, NULL);
+        SDL_SetStringProperty(props, SDL_PROP_WINDOW_WAYLAND_XDG_TOPLEVEL_EXPORT_HANDLE_STRING, NULL);
     }
 
 #ifdef HAVE_LIBDECOR_H
@@ -2265,6 +2253,11 @@ int Wayland_CreateWindow(SDL_VideoDevice *_this, SDL_Window *window, SDL_Propert
     if (!custom_surface_role || (window->flags & SDL_WINDOW_HIGH_PIXEL_DENSITY)) {
         if (c->viewporter) {
             data->viewport = wp_viewporter_get_viewport(c->viewporter, data->surface);
+
+            /* The viewport always uses the entire buffer. */
+            wp_viewport_set_source(data->viewport,
+                                   wl_fixed_from_int(-1), wl_fixed_from_int(-1),
+                                   wl_fixed_from_int(-1), wl_fixed_from_int(-1));
         }
         if (c->fractional_scale_manager) {
             data->fractional_scale = wp_fractional_scale_manager_v1_get_fractional_scale(c->fractional_scale_manager, data->surface);
