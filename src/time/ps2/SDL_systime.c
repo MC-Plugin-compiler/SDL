@@ -18,38 +18,48 @@
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 */
-
-#include "../SDL_syslocale.h"
 #include "SDL_internal.h"
 
-#include <3ds.h>
+#ifdef SDL_TIME_PS2
 
-/* Used when the CFGU fails to work. */
-#define BAD_LOCALE 255
+#include "../SDL_time_c.h"
 
-static u8 GetLocaleIndex(void);
+/* PS2 epoch is Jan 1 2000 JST (UTC +9) */
+#define UNIX_EPOCH_OFFSET_SEC 946717200
 
-int SDL_SYS_GetPreferredLocales(char *buf, size_t buflen)
+/* TODO: Implement this... */
+void SDL_GetSystemTimeLocalePreferences(SDL_DATE_FORMAT *df, SDL_TIME_FORMAT *tf)
 {
-    /* The 3DS only supports these 12 languages, only one can be active at a time */
-    static const char AVAILABLE_LOCALES[][6] = { "ja_JP", "en_US", "fr_FR", "de_DE",
-                                                 "it_IT", "es_ES", "zh_CN", "ko_KR",
-                                                 "nl_NL", "pt_PT", "ru_RU", "zh_TW" };
-    u8 current_locale = GetLocaleIndex();
-    if (current_locale != BAD_LOCALE) {
-        SDL_strlcpy(buf, AVAILABLE_LOCALES[current_locale], buflen);
+}
+
+int SDL_GetCurrentTime(SDL_Time *ticks)
+{
+    if (!ticks) {
+        return SDL_InvalidParamError("ticks");
     }
+
+    *ticks = 0;
+
     return 0;
 }
 
-static u8 GetLocaleIndex(void)
+int SDL_TimeToDateTime(SDL_Time ticks, SDL_DateTime *dt, SDL_bool localTime)
 {
-    u8 current_locale;
-    Result result;
-    if (R_FAILED(cfguInit())) {
-        return BAD_LOCALE;
+    if (!dt) {
+        return SDL_InvalidParamError("dt");
     }
-    result = CFGU_GetSystemLanguage(&current_locale);
-    cfguExit();
-    return R_SUCCEEDED(result) ? current_locale : BAD_LOCALE;
+
+    dt->year = 1970;
+    dt->month = 1;
+    dt->day = 1;
+    dt->hour = 0;
+    dt->minute = 0;
+    dt->second = 0;
+    dt->nanosecond = 0;
+    dt->day_of_week = 4;
+    dt->utc_offset = 0;
+
+    return 0;
 }
+
+#endif /* SDL_TIME_PS2 */

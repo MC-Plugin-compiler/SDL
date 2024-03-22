@@ -59,26 +59,11 @@ int SDL_SYS_RemovePath(const char *path)
 {
     int rc = remove(path);
     if (rc < 0) {
-        const int origerrno = errno;
-        if (origerrno == ENOENT) {
-            char *parent = SDL_strdup(path);
-            if (!parent) {
-                return -1;
-            }
-
-            char *ptr = SDL_strrchr(parent, '/');
-            if (ptr) {
-                *ptr = '\0';  // chop off thing we were removing, see if parent is there.
-            }
-
-            struct stat statbuf;
-            rc = stat(ptr ? parent : ".", &statbuf);
-            SDL_free(parent);
-            if (rc == 0) {
-                return 0;  // it's already gone, and parent exists, consider it success.
-            }
+        if (errno == ENOENT) {
+            // It's already gone, this is a success
+            return 0;
         }
-        return SDL_SetError("Can't remove path: %s", strerror(origerrno));
+        return SDL_SetError("Can't remove path: %s", strerror(errno));
     }
     return 0;
 }
@@ -124,10 +109,21 @@ int SDL_SYS_GetPathInfo(const char *path, SDL_PathInfo *info)
         info->size = (Uint64) statbuf.st_size;
     }
 
-    info->create_time = (SDL_FileTime)SDL_SECONDS_TO_NS(statbuf.st_ctime);
-    info->modify_time = (SDL_FileTime)SDL_SECONDS_TO_NS(statbuf.st_mtime);
-    info->access_time = (SDL_FileTime)SDL_SECONDS_TO_NS(statbuf.st_atime);
-
+#if defined(HAVE_ST_MTIM)
+    /* POSIX.1-2008 standard */
+    info->create_time = (SDL_Time)SDL_SECONDS_TO_NS(statbuf.st_ctim.tv_sec) + statbuf.st_ctim.tv_nsec;
+    info->modify_time = (SDL_Time)SDL_SECONDS_TO_NS(statbuf.st_mtim.tv_sec) + statbuf.st_mtim.tv_nsec;
+    info->access_time = (SDL_Time)SDL_SECONDS_TO_NS(statbuf.st_atim.tv_sec) + statbuf.st_atim.tv_nsec;
+#elif defined(SDL_PLATFORM_APPLE)
+    /* Apple platform stat structs use 'st_*timespec' naming. */
+    info->create_time = (SDL_Time)SDL_SECONDS_TO_NS(statbuf.st_ctimespec.tv_sec) + statbuf.st_ctimespec.tv_nsec;
+    info->modify_time = (SDL_Time)SDL_SECONDS_TO_NS(statbuf.st_mtimespec.tv_sec) + statbuf.st_mtimespec.tv_nsec;
+    info->access_time = (SDL_Time)SDL_SECONDS_TO_NS(statbuf.st_atimespec.tv_sec) + statbuf.st_atimespec.tv_nsec;
+#else
+    info->create_time = (SDL_Time)SDL_SECONDS_TO_NS(statbuf.st_ctime);
+    info->modify_time = (SDL_Time)SDL_SECONDS_TO_NS(statbuf.st_mtime);
+    info->access_time = (SDL_Time)SDL_SECONDS_TO_NS(statbuf.st_atime);
+#endif
     return 0;
 }
 
