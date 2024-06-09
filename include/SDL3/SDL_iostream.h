@@ -45,16 +45,35 @@
 extern "C" {
 #endif
 
-/* SDL_IOStream status, set by a read or write operation */
+/**
+ * SDL_IOStream status, set by a read or write operation.
+ *
+ * \since This enum is available since SDL 3.0.0.
+ */
 typedef enum SDL_IOStatus
 {
-    SDL_IO_STATUS_READY,     /**< Everything is ready */
+    SDL_IO_STATUS_READY,     /**< Everything is ready (no error or EOF). */
     SDL_IO_STATUS_ERROR,     /**< Read or write I/O error */
     SDL_IO_STATUS_EOF,       /**< End of file */
     SDL_IO_STATUS_NOT_READY, /**< Non blocking I/O, not ready */
     SDL_IO_STATUS_READONLY,  /**< Tried to write a read-only buffer */
     SDL_IO_STATUS_WRITEONLY  /**< Tried to read a write-only buffer */
 } SDL_IOStatus;
+
+/**
+ * Possible `whence` values for SDL_IOStream seeking.
+ *
+ * These map to the same "whence" concept that `fseek` or `lseek` use in the
+ * standard C runtime.
+ *
+ * \since This enum is available since SDL 3.0.0.
+ */
+typedef enum SDL_IOWhence
+{
+    SDL_IO_SEEK_SET,  /**< Seek from the beginning of data */
+    SDL_IO_SEEK_CUR,  /**< Seek relative to current read point */
+    SDL_IO_SEEK_END,  /**< Seek relative to the end of data */
+} SDL_IOWhence;
 
 /**
  * The function pointers that drive an SDL_IOStream.
@@ -81,7 +100,7 @@ typedef struct SDL_IOStreamInterface
      *
      *  \return the final offset in the data stream, or -1 on error.
      */
-    Sint64 (SDLCALL *seek)(void *userdata, Sint64 offset, int whence);
+    Sint64 (SDLCALL *seek)(void *userdata, Sint64 offset, SDL_IOWhence whence);
 
     /**
      *  Read up to `size` bytes from the data stream to the area pointed
@@ -290,12 +309,15 @@ extern SDL_DECLSPEC SDL_IOStream *SDLCALL SDL_IOFromConstMem(const void *mem, si
  * allocated memory.
  *
  * This supports the following properties to provide access to the memory and
- * control over allocations: - `SDL_PROP_IOSTREAM_DYNAMIC_MEMORY_POINTER`: a
- * pointer to the internal memory of the stream. This can be set to NULL to
- * transfer ownership of the memory to the application, which should free the
- * memory with SDL_free(). If this is done, the next operation on the stream
- * must be SDL_CloseIO(). - `SDL_PROP_IOSTREAM_DYNAMIC_CHUNKSIZE_NUMBER`:
- * memory will be allocated in multiples of this size, defaulting to 1024.
+ * control over allocations:
+ *
+ * - `SDL_PROP_IOSTREAM_DYNAMIC_MEMORY_POINTER`: a pointer to the internal
+ *   memory of the stream. This can be set to NULL to transfer ownership of
+ *   the memory to the application, which should free the memory with
+ *   SDL_free(). If this is done, the next operation on the stream must be
+ *   SDL_CloseIO().
+ * - `SDL_PROP_IOSTREAM_DYNAMIC_CHUNKSIZE_NUMBER`: memory will be allocated in
+ *   multiples of this size, defaulting to 1024.
  *
  * \returns a pointer to a new SDL_IOStream structure, or NULL if it fails;
  *          call SDL_GetError() for more information.
@@ -379,11 +401,6 @@ extern SDL_DECLSPEC int SDLCALL SDL_CloseIO(SDL_IOStream *context);
  */
 extern SDL_DECLSPEC SDL_PropertiesID SDLCALL SDL_GetIOProperties(SDL_IOStream *context);
 
-/* Possible `whence` values for SDL_IOStream seeking... */
-#define SDL_IO_SEEK_SET 0       /**< Seek from the beginning of data */
-#define SDL_IO_SEEK_CUR 1       /**< Seek relative to current read point */
-#define SDL_IO_SEEK_END 2       /**< Seek relative to the end of data */
-
 /**
  * Query the stream status of an SDL_IOStream.
  *
@@ -431,7 +448,7 @@ extern SDL_DECLSPEC Sint64 SDLCALL SDL_GetIOSize(SDL_IOStream *context);
  * If this stream can not seek, it will return -1.
  *
  * \param context a pointer to an SDL_IOStream structure
- * \param offset an offset in bytes, relative to **whence** location; can be
+ * \param offset an offset in bytes, relative to `whence` location; can be
  *               negative
  * \param whence any of `SDL_IO_SEEK_SET`, `SDL_IO_SEEK_CUR`,
  *               `SDL_IO_SEEK_END`
@@ -442,7 +459,7 @@ extern SDL_DECLSPEC Sint64 SDLCALL SDL_GetIOSize(SDL_IOStream *context);
  *
  * \sa SDL_TellIO
  */
-extern SDL_DECLSPEC Sint64 SDLCALL SDL_SeekIO(SDL_IOStream *context, Sint64 offset, int whence);
+extern SDL_DECLSPEC Sint64 SDLCALL SDL_SeekIO(SDL_IOStream *context, Sint64 offset, SDL_IOWhence whence);
 
 /**
  * Determine the current read/write offset in an SDL_IOStream data stream.
